@@ -137,9 +137,9 @@ export default function Home() {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="inline-flex items-center justify-center w-24 h-24 mb-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 shadow-[0_0_40px_rgba(59,130,246,0.5)]"
+            className="inline-flex items-center justify-center mb-6"
           >
-            <Car className="w-12 h-12 text-white" />
+            <img src="/logo.png" alt="Auto Club Logo" className="w-32 h-32 object-contain drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
           </motion.div>
 
           <motion.h1

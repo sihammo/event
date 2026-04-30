@@ -57,9 +57,9 @@ export default function AdminLogin() {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 shadow-[0_0_40px_rgba(59,130,246,0.5)]"
+            className="inline-flex items-center justify-center mb-6"
           >
-            <Shield className="w-10 h-10 text-white" />
+            <img src="/logo.png" alt="Auto Club Logo" className="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
           </motion.div>
 
           <motion.h1

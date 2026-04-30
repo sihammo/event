@@ -94,12 +94,15 @@ export default function AdminDashboard() {
           transition={{ duration: 0.5 }}
           className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4"
         >
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500"
-                style={{ fontFamily: 'var(--font-heading)' }}>
-              ADMIN DASHBOARD
-            </h1>
-            <p className="text-blue-200/70 mt-1">Auto Club Event Registrations</p>
+          <div className="flex items-center gap-4">
+            <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500"
+                  style={{ fontFamily: 'var(--font-heading)' }}>
+                ADMIN DASHBOARD
+              </h1>
+              <p className="text-blue-200/70 mt-1">Auto Club Event Registrations</p>
+            </div>
           </div>
 
           <motion.button
