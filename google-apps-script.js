@@ -1,72 +1,76 @@
 function doPost(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const masterSheet = ss.getSheetByName("registrations") || ss.insertSheet("registrations");
     const data = JSON.parse(e.postData.contents);
     
-    // Add headers if sheet is empty
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        'Timestamp',
-        'Type',
-        'First Name',
-        'Last Name',
-        'Phone',
-        'Email',
-        'Gender',
-        'Team Member 2 Name',
-        'Team Member 2 Email',
-        'Team Member 3 Name',
-        'Team Member 3 Email',
-        'Team Member 4 Name',
-        'Team Member 4 Email',
-        'Team Member 5 Name',
-        'Team Member 5 Email'
+    // Setup headers for master sheet if empty
+    if (masterSheet.getLastRow() === 0) {
+      masterSheet.appendRow([
+        'Timestamp', 'Type', 'First Name', 'Last Name', 'Phone', 'Email', 'Gender',
+        'Team Member 2 Name', 'Team Member 2 Email',
+        'Team Member 3 Name', 'Team Member 3 Email',
+        'Team Member 4 Name', 'Team Member 4 Email',
+        'Team Member 5 Name', 'Team Member 5 Email'
       ]);
     }
 
     const timestamp = new Date();
-    
+    let rowData = [];
+    let specificSheetName = "";
+    let specificRowData = [];
+
     if (data.type === 'solo') {
-      sheet.appendRow([
-        timestamp,
-        data.type,
-        data.data.firstName,
-        data.data.lastName,
-        data.data.phone,
-        data.data.email,
-        data.data.gender,
+      specificSheetName = "Solo_Registrations";
+      rowData = [
+        timestamp, data.type, data.data.firstName, data.data.lastName,
+        data.data.phone, data.data.email, data.data.gender,
         '', '', '', '', '', '', '', ''
-      ]);
+      ];
+      specificRowData = [
+        timestamp, data.data.firstName, data.data.lastName,
+        data.data.phone, data.data.email, data.data.gender
+      ];
     } else if (data.type === 'visitor') {
-      sheet.appendRow([
-        timestamp,
-        data.type,
-        data.data.name,
-        '',
-        data.data.phone,
-        data.data.email,
-        '',
+      specificSheetName = "Visitor_Registrations";
+      rowData = [
+        timestamp, data.type, data.data.name, '',
+        data.data.phone, data.data.email, '',
         '', '', '', '', '', '', '', ''
-      ]);
+      ];
+      specificRowData = [
+        timestamp, data.data.name, data.data.phone, data.data.email
+      ];
     } else if (data.type === 'team') {
-      const members = data.data.members;
-      sheet.appendRow([
-        timestamp,
-        'team',
-        members[0].firstName + ' ' + members[0].lastName,
-        '', // Last name included in previous column for simplicity, or split it
-        members[0].phone,
-        members[0].email,
-        members[0].gender,
-        members[1].firstName + ' ' + members[1].lastName,
-        members[1].email,
-        members[2].firstName + ' ' + members[2].lastName,
-        members[2].email,
-        members[3].firstName + ' ' + members[3].lastName,
-        members[3].email,
-        members[4].firstName + ' ' + members[4].lastName,
-        members[4].email
-      ]);
+      specificSheetName = "Team_Registrations";
+      const m = data.data.members;
+      rowData = [
+        timestamp, 'team', m[0].firstName + ' ' + m[0].lastName, '',
+        m[0].phone, m[0].email, m[0].gender,
+        m[1].firstName + ' ' + m[1].lastName, m[1].email,
+        m[2].firstName + ' ' + m[2].lastName, m[2].email,
+        m[3].firstName + ' ' + m[3].lastName, m[3].email,
+        m[4].firstName + ' ' + m[4].lastName, m[4].email
+      ];
+      specificRowData = rowData.slice(); // Copy for team
+    }
+
+    // Append to master sheet
+    masterSheet.appendRow(rowData);
+
+    // Append to specific sheet
+    if (specificSheetName) {
+      let specificSheet = ss.getSheetByName(specificSheetName) || ss.insertSheet(specificSheetName);
+      if (specificSheet.getLastRow() === 0) {
+        if (data.type === 'solo') {
+          specificSheet.appendRow(['Timestamp', 'First Name', 'Last Name', 'Phone', 'Email', 'Gender']);
+        } else if (data.type === 'visitor') {
+          specificSheet.appendRow(['Timestamp', 'Name', 'Phone', 'Email']);
+        } else {
+          specificSheet.appendRow(masterSheet.getRange(1, 1, 1, 15).getValues()[0]);
+        }
+      }
+      specificSheet.appendRow(specificRowData);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
@@ -80,7 +84,14 @@ function doPost(e) {
 
 function doGet() {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("registrations");
+    
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify([]))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
     const values = sheet.getDataRange().getValues();
     if (values.length < 2) {
       return ContentService.createTextOutput(JSON.stringify([]))
