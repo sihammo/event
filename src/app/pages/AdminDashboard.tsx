@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwnYIrLoy_8DqpqFQFPil4HaJRVJVegWclthFD_hPMjqa7_s_J6A9KbPrGlfW6J8oezA/exec';
+  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyiimqnY_PhHIppNS6P6TjG4l6n68eytKIiDtt3sx__vngpdcx74N7l0gokbW1puWalBA/exec';
 
   useEffect(() => {
     // Check authentication
