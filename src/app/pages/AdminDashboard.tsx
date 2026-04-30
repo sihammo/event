@@ -14,7 +14,7 @@ export default function AdminDashboard() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylotOLwtAzxz9QkvB-M5faAhPHQFFcusAlCuX9Ug10C4EirHlqsdapjUe4_GXVwBTYWw/exec';
+  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwYqaJ6OqmjLCSVr1EwaQiCWFDRZUDQSOdoZPKFg7MHB6AtZDSutVoN5P50wTJN4R__Mg/exec';
 
   useEffect(() => {
     // Check authentication

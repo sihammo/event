@@ -84,8 +84,7 @@ function doGet() {
     const values = sheet.getDataRange().getValues();
     if (values.length < 2) {
       return ContentService.createTextOutput(JSON.stringify([]))
-        .setMimeType(ContentService.MimeType.JSON)
-        .setHeader("Access-Control-Allow-Origin", "*");
+        .setMimeType(ContentService.MimeType.JSON);
     }
     
     const rows = values.slice(1);
@@ -129,20 +128,9 @@ function doGet() {
     });
     
     return ContentService.createTextOutput(JSON.stringify(registrations))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeader("Access-Control-Allow-Origin", "*");
+      .setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeader("Access-Control-Allow-Origin", "*");
+      .setMimeType(ContentService.MimeType.JSON);
   }
-}
-
-// To allow CORS for your frontend
-function doOptions(e) {
-  return ContentService.createTextOutput("")
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeader("Access-Control-Allow-Origin", "*")
-    .setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-    .setHeader("Access-Control-Allow-Headers", "Content-Type");
 }

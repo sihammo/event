@@ -33,7 +33,7 @@ export default function Home() {
   const teamForm = useForm<TeamFormData>();
   const visitorForm = useForm<VisitorFormData>();
 
-  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylotOLwtAzxz9QkvB-M5faAhPHQFFcusAlCuX9Ug10C4EirHlqsdapjUe4_GXVwBTYWw/exec';
+  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwYqaJ6OqmjLCSVr1EwaQiCWFDRZUDQSOdoZPKFg7MHB6AtZDSutVoN5P50wTJN4R__Mg/exec';
 
   const sendToSheet = async (type: 'solo' | 'team' | 'visitor', data: any) => {
     try {
@@ -41,7 +41,7 @@ export default function Home() {
         method: 'POST',
         mode: 'no-cors',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify({ type, data }),
       });
