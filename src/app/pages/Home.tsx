@@ -33,7 +33,7 @@ export default function Home() {
   const teamForm = useForm<TeamFormData>();
   const visitorForm = useForm<VisitorFormData>();
 
-  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwYqaJ6OqmjLCSVr1EwaQiCWFDRZUDQSOdoZPKFg7MHB6AtZDSutVoN5P50wTJN4R__Mg/exec';
+  const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwnYIrLoy_8DqpqFQFPil4HaJRVJVegWclthFD_hPMjqa7_s_J6A9KbPrGlfW6J8oezA/exec';
 
   const sendToSheet = async (type: 'solo' | 'team' | 'visitor', data: any) => {
     try {
