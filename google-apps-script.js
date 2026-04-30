@@ -67,41 +67,38 @@ function doPost(e) {
         } else if (data.type === 'visitor') {
           specificSheet.appendRow(['Timestamp', 'Name', 'Phone', 'Email']);
         } else {
-          specificSheet.appendRow(masterSheet.getRange(1, 1, 1, 15).getValues()[0]);
+          specificSheet.appendRow(['Timestamp', 'Type', 'Data']); // Fallback
         }
       }
       specificSheet.appendRow(specificRowData);
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return returnJson({ status: 'success' });
       
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return returnJson({ status: 'error', message: error.toString() });
   }
 }
 
 function doGet() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName("registrations");
+    // Try both lowercase and capitalized just in case
+    const sheet = ss.getSheetByName("registrations") || ss.getSheetByName("Registrations") || ss.getSheets()[0];
     
-    if (!sheet) {
-      return ContentService.createTextOutput(JSON.stringify([]))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+    if (!sheet) return returnJson([]);
     
     const values = sheet.getDataRange().getValues();
-    if (values.length < 2) {
-      return ContentService.createTextOutput(JSON.stringify([]))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+    if (values.length < 2) return returnJson([]);
     
+    const registrations = [];
     const rows = values.slice(1);
     
-    const registrations = rows.map(row => {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
       const type = row[1];
+      if (!type) continue; // Skip empty rows
+      
       const timestamp = row[0];
       let data = {};
       
@@ -131,17 +128,20 @@ function doGet() {
         };
       }
       
-      return {
+      registrations.push({
         type: type,
         timestamp: timestamp,
         data: data
-      };
-    });
+      });
+    }
     
-    return ContentService.createTextOutput(JSON.stringify(registrations))
-      .setMimeType(ContentService.MimeType.JSON);
+    return returnJson(registrations);
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return returnJson({ status: 'error', message: error.toString() });
   }
+}
+
+function returnJson(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }

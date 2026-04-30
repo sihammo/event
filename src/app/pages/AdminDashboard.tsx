@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwnYIrLoy_8DqpqFQFPil4HaJRVJVegWclthFD_hPMjqa7_s_J6A9KbPrGlfW6J8oezA/exec';
 
@@ -24,24 +25,29 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Load registrations from localStorage
+    // Load registrations
     loadRegistrations();
   }, [navigate]);
 
   const loadRegistrations = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       // Add a timestamp to avoid caching
       const response = await fetch(`${GOOGLE_SHEET_URL}?t=${Date.now()}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
       const data = await response.json();
       
       if (Array.isArray(data)) {
         setRegistrations(data);
-        // Also sync with localStorage for offline view
         localStorage.setItem('registrations', JSON.stringify(data));
+      } else if (data && data.status === 'error') {
+        throw new Error(data.message || 'Script error');
       }
-    } catch (error) {
-      console.error('Error fetching from Google Sheets:', error);
+    } catch (err: any) {
+      console.error('Error fetching from Google Sheets:', err);
+      setError(err.message || 'Failed to connect to Google Sheets');
       // Fallback to localStorage
       const localData = JSON.parse(localStorage.getItem('registrations') || '[]');
       setRegistrations(localData);
@@ -210,6 +216,19 @@ export default function AdminDashboard() {
             <div className="text-center py-12">
               <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-blue-200/50">Fetching data from Google Sheets...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 max-w-md mx-auto">
+                <p className="text-red-400 font-medium mb-2">Connection Error</p>
+                <p className="text-red-300/70 text-sm">{error}</p>
+                <button 
+                  onClick={loadRegistrations}
+                  className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-md transition-all text-sm"
+                >
+                  Try Again
+                </button>
+              </div>
             </div>
           ) : registrations.length === 0 ? (
             <div className="text-center py-12">
