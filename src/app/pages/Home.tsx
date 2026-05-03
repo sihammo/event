@@ -37,7 +37,7 @@ export default function Home() {
 
   const sendToSheet = async (type: 'solo' | 'team' | 'visitor', data: any) => {
     try {
-      await fetch(GOOGLE_SHEET_URL, {
+      const response = await fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: {
@@ -45,6 +45,7 @@ export default function Home() {
         },
         body: JSON.stringify({ type, data }),
       });
+      console.log('Submission attempt complete for:', type);
       return true;
     } catch (error) {
       console.error('Error sending to sheet:', error);

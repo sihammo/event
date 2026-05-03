@@ -1,4 +1,7 @@
 function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000); // Wait up to 10 seconds for other processes to finish
+
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const masterSheet = ss.getSheetByName("registrations") || ss.insertSheet("registrations");
@@ -7,84 +10,55 @@ function doPost(e) {
     // Setup headers for master sheet if empty
     if (masterSheet.getLastRow() === 0) {
       masterSheet.appendRow([
-        'Timestamp', 'Type', 'First Name', 'Last Name', 'Phone', 'Email', 'Gender',
-        'Team Member 2 Name', 'Team Member 2 Email',
-        'Team Member 3 Name', 'Team Member 3 Email',
-        'Team Member 4 Name', 'Team Member 4 Email',
-        'Team Member 5 Name', 'Team Member 5 Email'
+        'Timestamp', 'Type', 'Full Name/Member 1', 'Email', 'Phone', 'Gender',
+        'Member 2', 'Email 2', 'Member 3', 'Email 3',
+        'Member 4', 'Email 4', 'Member 5', 'Email 5'
       ]);
     }
 
     const timestamp = new Date();
     let rowData = [];
-    let specificSheetName = "";
-    let specificRowData = [];
 
     if (data.type === 'solo') {
-      specificSheetName = "Solo_Registrations";
       rowData = [
-        timestamp, data.type, data.data.firstName, data.data.lastName,
-        data.data.phone, data.data.email, data.data.gender,
+        timestamp, 'solo', data.data.firstName + ' ' + data.data.lastName,
+        data.data.email, data.data.phone, data.data.gender,
         '', '', '', '', '', '', '', ''
-      ];
-      specificRowData = [
-        timestamp, data.data.firstName, data.data.lastName,
-        data.data.phone, data.data.email, data.data.gender
       ];
     } else if (data.type === 'visitor') {
-      specificSheetName = "Visitor_Registrations";
       rowData = [
-        timestamp, data.type, data.data.name, '',
-        data.data.phone, data.data.email, '',
+        timestamp, 'visitor', data.data.name, data.data.email,
+        data.data.phone, 'N/A',
         '', '', '', '', '', '', '', ''
       ];
-      specificRowData = [
-        timestamp, data.data.name, data.data.phone, data.data.email
-      ];
     } else if (data.type === 'team') {
-      specificSheetName = "Team_Registrations";
       const m = data.data.members;
       rowData = [
-        timestamp, 'team', m[0].firstName + ' ' + m[0].lastName, '',
-        m[0].phone, m[0].email, m[0].gender,
+        timestamp, 'team', m[0].firstName + ' ' + m[0].lastName, m[0].email,
+        m[0].phone, m[0].gender,
         m[1].firstName + ' ' + m[1].lastName, m[1].email,
         m[2].firstName + ' ' + m[2].lastName, m[2].email,
         m[3].firstName + ' ' + m[3].lastName, m[3].email,
         m[4].firstName + ' ' + m[4].lastName, m[4].email
       ];
-      specificRowData = rowData.slice(); // Copy for team
     }
 
     // Append to master sheet
     masterSheet.appendRow(rowData);
 
-    // Append to specific sheet
-    if (specificSheetName) {
-      let specificSheet = ss.getSheetByName(specificSheetName) || ss.insertSheet(specificSheetName);
-      if (specificSheet.getLastRow() === 0) {
-        if (data.type === 'solo') {
-          specificSheet.appendRow(['Timestamp', 'First Name', 'Last Name', 'Phone', 'Email', 'Gender']);
-        } else if (data.type === 'visitor') {
-          specificSheet.appendRow(['Timestamp', 'Name', 'Phone', 'Email']);
-        } else {
-          specificSheet.appendRow(['Timestamp', 'Type', 'Data']); // Fallback
-        }
-      }
-      specificSheet.appendRow(specificRowData);
-    }
-
     return returnJson({ status: 'success' });
       
   } catch (error) {
     return returnJson({ status: 'error', message: error.toString() });
+  } finally {
+    lock.releaseLock();
   }
 }
 
 function doGet() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    // Try both lowercase and capitalized just in case
-    const sheet = ss.getSheetByName("registrations") || ss.getSheetByName("Registrations") || ss.getSheets()[0];
+    const sheet = ss.getSheetByName("registrations") || ss.getSheets()[0];
     
     if (!sheet) return returnJson([]);
     
@@ -96,34 +70,44 @@ function doGet() {
     
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const type = row[1];
-      if (!type) continue; // Skip empty rows
+      const type = row[1] ? row[1].toLowerCase() : '';
+      if (!type) continue;
       
       const timestamp = row[0];
       let data = {};
       
       if (type === 'solo') {
         data = {
-          firstName: row[2],
-          lastName: row[3],
+          firstName: row[2].split(' ')[0],
+          lastName: row[2].split(' ').slice(1).join(' '),
+          email: row[3],
           phone: row[4],
-          email: row[5],
-          gender: row[6]
+          gender: row[5]
         };
+      const response = await fetch(GOOGLE_SHEET_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({ type, data }),
+      });
+      console.log('Submission attempt complete for:', type);
+      return true;
       } else if (type === 'visitor') {
         data = {
           name: row[2],
-          phone: row[4],
-          email: row[5]
+          email: row[3],
+          phone: row[4]
         };
       } else if (type === 'team') {
         data = {
           members: [
-            { firstName: row[2], lastName: '', phone: row[4], email: row[5], gender: row[6] },
-            { firstName: row[7], lastName: '', email: row[8], phone: '', gender: 'male' },
-            { firstName: row[9], lastName: '', email: row[10], phone: '', gender: 'male' },
-            { firstName: row[11], lastName: '', email: row[12], phone: '', gender: 'male' },
-            { firstName: row[13], lastName: '', email: row[14], phone: '', gender: 'male' }
+            { firstName: row[2], lastName: '', email: row[3], phone: row[4], gender: row[5] },
+            { firstName: row[6], lastName: '', email: row[7], phone: '', gender: '' },
+            { firstName: row[8], lastName: '', email: row[9], phone: '', gender: '' },
+            { firstName: row[10], lastName: '', email: row[11], phone: '', gender: '' },
+            { firstName: row[12], lastName: '', email: row[13], phone: '', gender: '' }
           ]
         };
       }
