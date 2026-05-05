@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useForm } from 'react-hook-form';
-import { User, Users, CheckCircle, Car, Loader } from 'lucide-react';
+import { User, Users, CheckCircle, Car, Loader, Vote, Star, Gift } from 'lucide-react';
+import { useGameState } from '../game/useGameState';
 
 type RegistrationType = 'solo' | 'team' | 'visitor' | null;
 
@@ -26,13 +27,46 @@ interface TeamFormData {
 }
 
 export default function Home() {
+  const { gameState, voteTeam } = useGameState();
   const [registrationType, setRegistrationType] = useState<RegistrationType>(null);
+  const [hasVoted, setHasVoted] = useState(() => localStorage.getItem('hasVotedRound5') === 'true');
+  const [showVoteModal, setShowVoteModal] = useState<string | null>(null);
+  const [voterName, setVoterName] = useState(() => localStorage.getItem('voterName') || '');
+  const [voteError, setVoteError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const soloForm = useForm<SoloFormData>();
   const teamForm = useForm<TeamFormData>();
   const visitorForm = useForm<VisitorFormData>();
+
+  const checkNameExists = (nameToSearch: string) => {
+    const regsStr = localStorage.getItem('registrations');
+    if (!regsStr) return false;
+    try {
+      const regs = JSON.parse(regsStr);
+      const searchName = nameToSearch.toLowerCase().trim();
+      
+      for (const reg of regs) {
+        if (reg.type === 'visitor' && reg.data?.name) {
+          if (reg.data.name.toLowerCase().trim() === searchName) return true;
+        } else if (reg.type === 'solo' && reg.data?.firstName && reg.data?.lastName) {
+          const fullName = `${reg.data.firstName} ${reg.data.lastName}`.toLowerCase().trim();
+          const reverseName = `${reg.data.lastName} ${reg.data.firstName}`.toLowerCase().trim();
+          if (fullName === searchName || reverseName === searchName || reg.data.firstName.toLowerCase().trim() === searchName) return true;
+        } else if (reg.type === 'team' && reg.data?.members) {
+          for (const member of reg.data.members) {
+            const fullName = `${member.firstName} ${member.lastName}`.toLowerCase().trim();
+            const reverseName = `${member.lastName} ${member.firstName}`.toLowerCase().trim();
+            if (fullName === searchName || reverseName === searchName || member.firstName.toLowerCase().trim() === searchName) return true;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing registrations for name check', e);
+    }
+    return false;
+  };
 
   const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyiimqnY_PhHIppNS6P6TjG4l6n68eytKIiDtt3sx__vngpdcx74N7l0gokbW1puWalBA/exec';
 
@@ -183,6 +217,173 @@ export default function Home() {
             </a>
           </motion.div>
         </div>
+
+        {/* Live Voting Section (Round 5) */}
+        {gameState.currentRound === 5 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12 bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border-2 border-blue-400/50 rounded-3xl p-8 backdrop-blur-md shadow-[0_0_50px_rgba(59,130,246,0.3)] relative overflow-hidden"
+            dir="rtl"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Vote className="w-24 h-24 text-white rotate-12" />
+            </div>
+
+            <div className="relative z-10 text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1 bg-red-500 rounded-full text-white text-sm font-bold animate-pulse mb-4">
+                <span className="w-2 h-2 bg-white rounded-full"></span>
+                مباشر الآن: جولة البيع
+              </div>
+              
+              <h2 className="text-3xl font-bold text-white mb-2 font-arabic">من هو أفضل بائع؟ 🎤</h2>
+              <p className="text-blue-200 mb-8 font-arabic">صوت للفريق الذي أقنعك ببيع المنتج!</p>
+
+              {gameState.round5?.productRevealed ? (
+                <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="mb-8 p-6 bg-yellow-500/20 border border-yellow-500/50 rounded-2xl flex flex-col items-center gap-4"
+                >
+                  <Gift className="w-12 h-12 text-yellow-400" />
+                  <div className="text-center">
+                    <div className="text-yellow-400 font-bold text-xl font-arabic mb-2">المنتج المفاجأة هو:</div>
+                    <div className="text-white text-3xl font-black font-arabic mb-4">Kit Arduino Starter 🤖</div>
+                    <div className="bg-white p-2 rounded-xl inline-block shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://amara-arduino.youcan.store/products/kit-arduino-starter')}`} 
+                        alt="Product QR Code" 
+                        className="w-32 h-32 md:w-40 md:h-40 object-contain"
+                      />
+                    </div>
+                    <p className="text-blue-200 mt-3 text-sm font-arabic">امسح الكود لرؤية المنتج وتفاصيله</p>
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="mb-8 p-6 bg-slate-800/50 border border-slate-700 rounded-2xl flex flex-col items-center gap-2">
+                  <Gift className="w-12 h-12 text-slate-500 animate-bounce" />
+                  <div className="text-slate-400 font-arabic">بانتظار كشف المنتج...</div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(gameState.round5?.activeTeamIds || []).map((teamId, index) => {
+                  const team = gameState.teams.find(t => t.id === teamId);
+                  const colors = [
+                    'bg-blue-600/20 border-blue-500/50 hover:bg-blue-600/40 hover:border-blue-400',
+                    'bg-cyan-600/20 border-cyan-500/50 hover:bg-cyan-600/40 hover:border-cyan-400',
+                    'bg-purple-600/20 border-purple-500/50 hover:bg-purple-600/40 hover:border-purple-400',
+                    'bg-pink-600/20 border-pink-500/50 hover:bg-pink-600/40 hover:border-pink-400',
+                    'bg-amber-600/20 border-amber-500/50 hover:bg-amber-600/40 hover:border-amber-400',
+                  ];
+                  const colorClass = colors[index % colors.length];
+
+                  return (
+                    <motion.button
+                      key={teamId}
+                      whileHover={!hasVoted ? { scale: 1.05 } : {}}
+                      whileTap={!hasVoted ? { scale: 0.95 } : {}}
+                      disabled={hasVoted}
+                      onClick={() => {
+                        if (!hasVoted) {
+                          setShowVoteModal(teamId);
+                        }
+                      }}
+                      className={`relative p-6 rounded-2xl border-2 transition-all group ${
+                        hasVoted 
+                          ? 'bg-slate-800/50 border-slate-700 opacity-80' 
+                          : colorClass
+                      }`}
+                    >
+                      <div className="text-sm opacity-60 mb-1">فريق {index + 1}</div>
+                      <div className="text-2xl font-bold text-white font-arabic">
+                        {team?.name || 'فريق غير معروف'}
+                      </div>
+                      {hasVoted && <div className="mt-2 text-green-400 flex items-center justify-center gap-1"><CheckCircle className="w-4 h-4"/> تم التصويت</div>}
+                    </motion.button>
+                  );
+                })}
+              </div>
+              {(gameState.round5?.activeTeamIds || []).length === 0 && (
+                <div className="text-slate-400 font-arabic italic">بانتظار اختيار الفرق المتنافسة من طرف الأدمن...</div>
+              )}
+            </div>
+
+            {/* Voting Modal */}
+            <AnimatePresence>
+              {showVoteModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    className="bg-gradient-to-br from-slate-900 to-blue-950 border-2 border-blue-500/50 p-8 rounded-3xl w-full max-w-md text-center shadow-[0_0_40px_rgba(59,130,246,0.3)]"
+                    dir="rtl"
+                  >
+                    <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Vote className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2 font-arabic">تأكيد التصويت</h3>
+                    <p className="text-blue-200/80 mb-6 font-arabic text-sm">أدخل اسمك لتأكيد تصويتك. (لا يمكنك التصويت مرة أخرى بعد التأكيد)</p>
+                    
+                    <input
+                      type="text"
+                      placeholder="الاسم الكامل"
+                      value={voterName}
+                      onChange={e => {
+                        setVoterName(e.target.value);
+                        setVoteError(null); // Clear error when typing
+                      }}
+                      className="w-full px-4 py-3 bg-slate-900/80 border border-blue-500/50 rounded-xl text-white mb-2 text-center font-arabic focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+                    />
+                    {voteError && (
+                      <p className="text-red-400 text-sm font-arabic mb-4">{voteError}</p>
+                    )}
+                    {!voteError && <div className="mb-6"></div>}
+                    
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => {
+                          setShowVoteModal(null);
+                          setVoteError(null);
+                        }}
+                        className="flex-1 py-3 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-xl transition font-arabic"
+                      >
+                        إلغاء
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const name = voterName.trim();
+                          if (name) {
+                            if (!checkNameExists(name)) {
+                              setVoteError("عذراً، هذا الاسم غير مسجل في قائمة الحضور أو المشاركين.");
+                              return;
+                            }
+                            setVoteError(null);
+                            voteTeam(showVoteModal!);
+                            setHasVoted(true);
+                            localStorage.setItem('hasVotedRound5', 'true');
+                            localStorage.setItem('voterName', name);
+                            setShowVoteModal(null);
+                          }
+                        }}
+                        disabled={!voterName.trim()}
+                        className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl transition font-bold disabled:opacity-50 shadow-lg shadow-blue-500/30 font-arabic"
+                      >
+                        صوت الآن
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
         <AnimatePresence mode="wait">
           {!registrationType && !isSubmitted && !isSubmitting && (
