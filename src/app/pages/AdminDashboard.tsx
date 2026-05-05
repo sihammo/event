@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { LogOut, Users, User, Mail, Phone, Calendar, Trash2 } from 'lucide-react';
+import { LogOut, Users, User, Mail, Phone, Calendar, Trash2, Trophy } from 'lucide-react';
 
 interface Registration {
   type: 'solo' | 'team' | 'visitor';
@@ -111,15 +111,26 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-6 py-2.5 bg-red-600/20 border border-red-500/50 text-red-300 rounded-lg hover:bg-red-600/30 transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </motion.button>
+          <div className="flex gap-4 items-center">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/admin/game')}
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-lg hover:bg-blue-600/30 transition-all font-arabic"
+            >
+              <Trophy className="w-4 h-4" />
+              لوحة المسابقة
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-6 py-2.5 bg-red-600/20 border border-red-500/50 text-red-300 rounded-lg hover:bg-red-600/30 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* Statistics */}

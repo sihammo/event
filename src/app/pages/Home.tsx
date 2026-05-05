@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useForm } from 'react-hook-form';
-import { User, Users, CheckCircle, Car } from 'lucide-react';
+import { User, Users, CheckCircle, Car, Loader } from 'lucide-react';
 
 type RegistrationType = 'solo' | 'team' | 'visitor' | null;
 
@@ -28,6 +28,7 @@ interface TeamFormData {
 export default function Home() {
   const [registrationType, setRegistrationType] = useState<RegistrationType>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const soloForm = useForm<SoloFormData>();
   const teamForm = useForm<TeamFormData>();
@@ -54,6 +55,7 @@ export default function Home() {
   };
 
   const onSoloSubmit = async (data: SoloFormData) => {
+    setIsSubmitting(true);
     console.log('Solo Registration:', data);
     
     // Send to Google Sheets
@@ -68,10 +70,12 @@ export default function Home() {
     });
     localStorage.setItem('registrations', JSON.stringify(registrations));
 
+    setIsSubmitting(false);
     setIsSubmitted(true);
   };
 
   const onTeamSubmit = async (data: TeamFormData) => {
+    setIsSubmitting(true);
     console.log('Team Registration:', data);
     
     // Send to Google Sheets
@@ -86,10 +90,12 @@ export default function Home() {
     });
     localStorage.setItem('registrations', JSON.stringify(registrations));
 
+    setIsSubmitting(false);
     setIsSubmitted(true);
   };
 
   const onVisitorSubmit = async (data: VisitorFormData) => {
+    setIsSubmitting(true);
     console.log('Visitor Registration:', data);
     
     // Send to Google Sheets
@@ -104,6 +110,7 @@ export default function Home() {
     });
     localStorage.setItem('registrations', JSON.stringify(registrations));
 
+    setIsSubmitting(false);
     setIsSubmitted(true);
   };
 
@@ -157,15 +164,28 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="text-xl md:text-2xl text-blue-200/80"
+            className="text-xl md:text-2xl text-blue-200/80 mb-6"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             Event Registration
           </motion.p>
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <a 
+              href="/leaderboard"
+              className="inline-flex items-center gap-2 px-6 py-2 bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 rounded-full hover:bg-yellow-500/30 transition shadow-[0_0_15px_rgba(234,179,8,0.2)] font-arabic"
+            >
+              متابعة مجريات المسابقة مباشرة 🏆
+            </a>
+          </motion.div>
         </div>
 
         <AnimatePresence mode="wait">
-          {!registrationType && !isSubmitted && (
+          {!registrationType && !isSubmitted && !isSubmitting && (
             <motion.div
               key="selection"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -236,7 +256,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {registrationType === 'solo' && !isSubmitted && (
+          {registrationType === 'solo' && !isSubmitted && !isSubmitting && (
             <motion.div
               key="solo-form"
               initial={{ opacity: 0, x: 20 }}
@@ -361,7 +381,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {registrationType === 'team' && !isSubmitted && (
+          {registrationType === 'team' && !isSubmitted && !isSubmitting && (
             <motion.div
               key="team-form"
               initial={{ opacity: 0, x: 20 }}
@@ -485,7 +505,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {registrationType === 'visitor' && !isSubmitted && (
+          {registrationType === 'visitor' && !isSubmitted && !isSubmitting && (
             <motion.div
               key="visitor-form"
               initial={{ opacity: 0, x: 20 }}
@@ -565,7 +585,36 @@ export default function Home() {
             </motion.div>
           )}
 
-          {isSubmitted && (
+          {isSubmitting && (
+            <motion.div
+              key="submitting"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-br from-blue-950/40 to-cyan-950/40 border border-blue-500/30 rounded-2xl p-8 md:p-12 backdrop-blur-sm text-center"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-full bg-blue-500/20"
+              >
+                <Loader className="w-12 h-12 text-blue-400" />
+              </motion.div>
+
+              <h2 className="text-3xl md:text-4xl font-bold text-blue-300 mb-4 font-arabic">
+                جاري التسجيل الآن...
+              </h2>
+
+              <p className="text-lg text-blue-200/80 font-arabic">
+                الرجاء الانتظار قليلاً بينما نقوم بتأكيد تسجيلك في النظام.
+                <br />
+                لا تقم بتحديث الصفحة أو الخروج منها.
+              </p>
+            </motion.div>
+          )}
+
+          {isSubmitted && !isSubmitting && (
             <motion.div
               key="success"
               initial={{ opacity: 0, scale: 0.8 }}
